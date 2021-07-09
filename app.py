@@ -1,32 +1,49 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul  8 22:04:23 2021
 
-@author: avina
-"""
-
-from parrot import Parrot
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 import warnings
 warnings.filterwarnings("ignore")
 import streamlit as st
 
+torch.cuda.empty_cache()
 
-def random_state(seed):
+
+def set_seed(seed):
   torch.manual_seed(seed)
   if torch.cuda.is_available():
     torch.cuda.manual_seed_all(seed)
 
-random_state(1234)
-def paraphrase(phrases):
-    for phrase in phrases:
-        para_phrases = pp.augment(input_phrase=phrase)
-        for para_phrase in para_phrases:
-            return para_phrase
+set_seed(42)
 
-pp = Parrot(model_tag="prithivida/parrot_paraphraser_on_T5", use_gpu=True)
 
-# paraphrase([input()])
+model = AutoModelForSeq2SeqLM.from_pretrained("Vamsi/T5_Paraphrase_Paws")
+tokenizer = AutoTokenizer.from_pretrained("Vamsi/T5_Paraphrase_Paws")  
+
+
+
+def para2(sentence):
+    text =  "paraphrase: " + sentence + " </s>"
+
+    encoding = tokenizer.encode_plus(text,pad_to_max_length=True, return_tensors="pt")
+    input_ids = encoding["input_ids"]
+    attention_masks = encoding["attention_mask"]
+    
+    outputs = model.generate(
+        input_ids=input_ids, 
+        attention_mask=attention_masks,
+        max_length=256,
+        do_sample=True,
+        top_k=200,
+        top_p=0.95,
+        early_stopping=True,
+        num_return_sequences=5
+    )
+    lines =[]
+    for output in outputs:
+        line = tokenizer.decode(output, skip_special_tokens=True,clean_up_tokenization_spaces=True)
+        lines.append(line)
+        
+    return lines
 
 def main():
     st.title("English Sentence Paraphrasing !")
@@ -38,7 +55,7 @@ def main():
     # 	""")
     message = st.text_area("Enter Text for Paraphrasing","Type here... ")
     if st.button("Paraphrase!"):
-        summary_result = paraphrase([message])
+        summary_result = para2(message)
         st.success(summary_result)
     st.sidebar.subheader("By")
     st.sidebar.text("Avinash Nahar")
@@ -50,4 +67,3 @@ if __name__ == '__main__':
 	main()
 
         
-
