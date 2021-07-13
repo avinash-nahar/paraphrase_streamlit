@@ -9,19 +9,19 @@ Created on Sat Jul 10 23:10:22 2021
 
 
 import streamlit as st
-from transformers import PegasusForConditionalGeneration, PegasusTokenizer
-import torch
-torch.cuda.empty_cache()
+# from transformers import PegasusForConditionalGeneration, PegasusTokenizer
+# import torch
+# torch.cuda.empty_cache()
 
-model_name = 'tuner007/pegasus_paraphrase'
-torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-torch_device = 'cpu'
+# model_name = 'tuner007/pegasus_paraphrase'
+# torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# torch_device = 'cpu'
 
-#generator = pipeline('text-generation',model='zanderbush/Paraphrase')
+# #generator = pipeline('text-generation',model='zanderbush/Paraphrase')
 
 
-tokenizer = PegasusTokenizer.from_pretrained(model_name)
-model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
+# tokenizer = PegasusTokenizer.from_pretrained(model_name)
+# model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
 
 
 # @st.cache(max_entries=10, ttl=3600)
@@ -47,7 +47,7 @@ def main():
     # 	""")
     message = st.text_area("Enter Text for Paraphrasing","Type here... ")
     if st.button("Paraphrase!"):
-        summary_result = get_response(message)
+        summary_result = 'testing 1 2 3'
         st.success(summary_result)
     
     
