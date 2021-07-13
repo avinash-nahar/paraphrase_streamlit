@@ -1,53 +1,45 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jul 10 23:10:22 2021
 
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
-import warnings
-warnings.filterwarnings("ignore")
+@author: avina
+"""
+
+#from transformers import pipeline
+
+
 import streamlit as st
-
+from transformers import PegasusForConditionalGeneration, PegasusTokenizer
+import torch
 torch.cuda.empty_cache()
 
+model_name = 'tuner007/pegasus_paraphrase'
+torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+torch_device = 'cpu'
 
-def set_seed(seed):
-  torch.manual_seed(seed)
-  if torch.cuda.is_available():
-    torch.cuda.manual_seed_all(seed)
-
-set_seed(42)
+#generator = pipeline('text-generation',model='zanderbush/Paraphrase')
 
 
-model = AutoModelForSeq2SeqLM.from_pretrained("Vamsi/T5_Paraphrase_Paws")
-tokenizer = AutoTokenizer.from_pretrained("Vamsi/T5_Paraphrase_Paws")  
+tokenizer = PegasusTokenizer.from_pretrained(model_name)
+model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
 
 
+# @st.cache(max_entries=10, ttl=3600)
+# def generate_sentence(sentence):
+#     generator(sentence, num_return_sequences=2)
 
-def para2(sentence):
-    text =  "paraphrase: " + sentence + " </s>"
+@st.cache(max_entries=10, ttl=3600)
+def get_response(input_text):
+  batch = tokenizer([input_text],truncation=True,padding='longest',max_length=60, return_tensors="pt").to(torch_device)
+  translated = model.generate(**batch,max_length=60,num_beams=10, num_return_sequences=5, temperature=1.5)
+  tgt_text = tokenizer.batch_decode(translated, skip_special_tokens=True)
+  return tgt_text
+#get_response(input())
 
-    encoding = tokenizer.encode_plus(text,pad_to_max_length=True, return_tensors="pt")
-    input_ids = encoding["input_ids"]
-    attention_masks = encoding["attention_mask"]
-    
-    outputs = model.generate(
-        input_ids=input_ids, 
-        attention_mask=attention_masks,
-        max_length=256,
-        do_sample=True,
-        top_k=200,
-        top_p=0.95,
-        early_stopping=True,
-        num_return_sequences=5
-    )
-    lines =[]
-    for output in outputs:
-        line = tokenizer.decode(output, skip_special_tokens=True,clean_up_tokenization_spaces=True)
-        lines.append(line)
-        
-    return lines
 
 def main():
     st.title("English Sentence Paraphrasing !")
-    st.subheader("AI to improve your english and grammer, On the Go..")
+    st.subheader("AI to improve Grammer")
     # st.markdown("""
     # 	#### Description
     # 	+ This is a Natural Language Processing(NLP) Based App useful for Artificial Intelligence to
@@ -55,15 +47,44 @@ def main():
     # 	""")
     message = st.text_area("Enter Text for Paraphrasing","Type here... ")
     if st.button("Paraphrase!"):
-        summary_result = para2(message)
+        summary_result = get_response(message)
         st.success(summary_result)
+    
+    
+    # st.subheader("AI to Generate Sentences for you.")
+    # message2 = st.text_area("Generate Sentences","Type here... ")
+    # if st.button("Generate!"):
+    #     summary_result2 = get_response(message2)
+    #     st.success(summary_result2)
+    
+    
+    
     st.sidebar.subheader("By")
     st.sidebar.text("Avinash Nahar")
-    st.sidebar.text("Adbureau Analytics ")
+    st.sidebar.text("Adbureau Analytics - Pegas Version")
     st.sidebar.text(" www.adbureau.co ")
 	
 
 if __name__ == '__main__':
 	main()
 
-        
+
+# Generator
+
+# from transformers import pipeline
+
+# generator = pipeline('text-generation',model='zanderbush/Paraphrase')
+
+
+
+
+# def get_response(input_text,num_return_sequences,num_beams):
+#   batch = tokenizer([input_text],truncation=True,padding='longest',max_length=60, return_tensors="pt").to(torch_device)
+#   translated = model.generate(**batch,max_length=60,num_beams=num_beams, num_return_sequences=num_return_sequences, temperature=1.5)
+#   tgt_text = tokenizer.batch_decode(translated, skip_special_tokens=True)
+#   return tgt_text
+
+# num_beams = 10
+# num_return_sequences = 5
+# #context = input()
+# get_response(input(),num_return_sequences,num_beams)
